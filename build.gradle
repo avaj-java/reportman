@@ -36,10 +36,8 @@ repositories {
 
 dependencies {
 
-    if (rootProject?.findProject('common-util'))
-        compile project(':common-util')
-    else
-        compile 'com.github.avaj-java:common-util:0.0.1'
+    compile (rootProject?.findProject('common-util')) ? project(':common-util') : 'com.github.avaj-java:common-util:0.0.1'
+
 
     //POI
     compile 'org.apache.poi:poi:3.9'
