@@ -5,6 +5,8 @@ import org.apache.poi.ss.usermodel.*
 import org.apache.poi.ss.util.CellRangeAddress
 import org.apache.poi.ss.util.CellReference
 import org.apache.poi.xssf.usermodel.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.Field
@@ -15,6 +17,8 @@ import java.util.regex.Pattern
  * Created by sujkim on 2017-02-05.
  */
 class ReportMan {
+
+    final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     ReportMan(){}
 
