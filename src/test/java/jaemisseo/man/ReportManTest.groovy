@@ -19,7 +19,7 @@ class ReportManTest {
     void after(){
     }
 
-    Map dbInfo(){ return [ip:'127.0.0.1', db:'orcl', id:'tester', pw:'tester'] }
+    Map dbInfo(){ return [ip:'127.0.0.1', db:'orcl', uaser:'tester', password:'tester'] }
 
 
 
