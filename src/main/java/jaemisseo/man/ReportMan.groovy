@@ -22,6 +22,20 @@ class ReportMan {
 
     ReportMan(){}
 
+    ReportMan(File file){
+        this.outputStream = new FileOutputStream(file)
+    }
+
+    ReportMan(String fileName){
+        this.outputStream = new FileOutputStream(new File(fileName))
+    }
+
+    ReportMan(OutputStream outputStream){
+        this.outputStream = outputStream
+    }
+
+
+
     public static final String RANGE_AUTO = "AUTO"
     public static final String RANGE_DATA_ALL = "DATA_ALL"
     public static final String RANGE_DATA_COLUMN = "DATA_COLUMN"
@@ -114,32 +128,65 @@ class ReportMan {
         Map option = [:]
     }
 
+    OutputStream outputStream
     SheetOption sheetOpt
     Map<String, ColumnOption> columnOptMap
 
 
 
+    /**************************************************
+     *
+     * Setup
+     *
+     **************************************************/
+    ReportMan setColumns(String columns){
+        List<String> columnList = columns.split("\\s*,\\s*").toList()
+        return setColumns(columnList)
+    }
 
+    ReportMan setColumns(String... column){
+        return setColumns(column.toList())
+    }
+
+    ReportMan setColumns(List<String> columnList){
+        columnList.each{ String columnString ->
+            columnOptMap[columnString] = new ColumnOption(index: getColumnIndex(columnString))
+        }
+        return this
+    }
+
+
+
+    /**************************************************
+     *
+     * Read Excel File  ==> Data
+     *
+     **************************************************/
+    List toRowList(InputStream inputStream){
+        List allRowList = []
+        Map<String, String> mapInstance = [:]
+        excelToData(inputStream, mapInstance){ String sheetName, List rowList ->
+            allRowList += rowList
+        }
+        return allRowList
+    }
 
     List toRowList(InputStream inputStream, def instance){
         List allRowList = []
-        excelToData(inputStream, instance){ String sheetName, List rowList -> allRowList += rowList }
+        excelToData(inputStream, instance){ String sheetName, List rowList ->
+            allRowList += rowList
+        }
         return allRowList
     }
 
     Map<String, List> toSheetMap(InputStream inputStream, def instance){
         Map sheetMap = [:]
-        excelToData(inputStream, instance){ String sheetName, List rowList -> sheetMap[sheetName] = rowList }
+        excelToData(inputStream, instance){ String sheetName, List rowList ->
+            sheetMap[sheetName] = rowList
+        }
         return sheetMap
     }
 
-    /**
-     * Read Excel File => Data
-     * @param inputStream
-     * @param instance
-     * @param closure
-     * @return
-     */
     private boolean excelToData(InputStream inputStream, def instance, Closure closure){
         sheetOpt = sheetOpt ?: generateSheetOption(instance)
         columnOptMap = columnOptMap ?: generateColumnOptionMap(instance)
@@ -162,48 +209,73 @@ class ReportMan {
                 if (rowIndex++ < dataStartY){
                     continue
                 }
-                def rowDto = instance.getClass().newInstance()
-                columnOptMap.each{ String attr, ColumnOption cOpt ->
-                    // 5. Get Only Mapping Cell
-                    Cell cell = (cOpt.index > -1) ? row.getCell(dataStartX + cOpt.index) : null
-                    if (cell){
-                        if (attr){
-                            Class clazz = rowDto.metaClass.properties.find{ it.name == attr }.type
-                            cell.setCellType(Cell.CELL_TYPE_STRING)
-                            if (clazz == Integer.class){
-                                String value = cell.getStringCellValue()
-                                rowDto[attr] = value.isNumber() ? ((Double)Double.parseDouble(value)).intValue() : null
-                            }else{
-                                rowDto[attr] = cell.getStringCellValue()
-                            }
-//                            println rowDto[attr]
-                        }
-                    }else if (cOpt.isSheetNameField){
-                        rowDto[attr] = sheetName
-                    }
-                }
-                rowList << rowDto
+                rowList << getInstanceForOneRow(instance, row, dataStartX, sheetName)
             }
             closure(sheetName, rowList)
         }
         return true
     }
 
-
-
-
-
-
-
-    boolean write(String fileName, List allRowList){
-        return write(fileName, ["Sheet1":allRowList])
+    def getInstanceForOneRow(def instance, Row row, Integer dataStartX, String sheetName){
+        def rowDto = instance.getClass().newInstance()
+        columnOptMap.each{ String attr, ColumnOption cOpt ->
+            // 5. Get Only Mapping Cell
+            Cell cell = (cOpt.index > -1) ? row.getCell(dataStartX + cOpt.index) : null
+            if (cell){
+                if (attr){
+                    Class clazz = rowDto.metaClass.properties.find{ it.name == attr }.type
+                    cell.setCellType(Cell.CELL_TYPE_STRING)
+                    if (clazz == Integer.class){
+                        String value = cell.getStringCellValue()
+                        rowDto[attr] = value.isNumber() ? ((Double)Double.parseDouble(value)).intValue() : null
+                    }else{
+                        rowDto[attr] = cell.getStringCellValue()
+                    }
+//                    println rowDto[attr]
+                }
+            }else if (cOpt.isSheetNameField){
+                rowDto[attr] = sheetName
+            }
+        }
+        return rowDto
     }
 
-    boolean write(String fileName, String sheetName, List allRowList){
-        return write(fileName, ["${sheetName}":allRowList])
+
+
+    /**************************************************
+     * Write Excel File  <== Data
+     *
+     *    Example>
+     *      public downloadExcel(HttpServletResponse res){
+     *          List<User> users = getUserList();
+     *          ServletOutputStream out = setHeaderForDownloadExcel(res, fileName).getOutputStream();
+     *          new ReportMan(out).write(users);
+     *      }
+     *
+     *      private HttpServletResponse setHeaderForDownloadExcel(HttpServletResponse res, String fileName) {
+     *         res.setHeader("Content-disposition","attachment;filename=" +fileName);
+     *         res.setHeader("Content-Type", "application/vnd.ms-excel; charset=MS949");
+     *         res.setHeader("Content-Description", "JSP Generated Data");
+     *         res.setHeader("Content-Transfer-Encoding", "binary;");
+     *         res.setHeader("Pragma", "no-cache;");
+     *         res.setHeader("Expires", "-1;");
+     *         return res;
+     *     }
+     **************************************************/
+    boolean write(Class clazz){
+        List dummyList = [clazz.newInstance()]
+        return write(["Sheet1":dummyList])
     }
 
-    boolean write(String fileName, List allRowList, String sheetFieldName){
+    boolean write(List allRowList){
+        return write(["Sheet1":allRowList])
+    }
+
+    boolean write(String sheetName, List allRowList){
+        return write(["${sheetName}":allRowList])
+    }
+
+    boolean write(List allRowList, String sheetFieldName){
         Map sheetMap = [:]
         allRowList.each{
             List rowList = sheetMap[it[sheetFieldName]]
@@ -212,16 +284,10 @@ class ReportMan {
             else
                 rowList << it
         }
-        return write(fileName, sheetMap)
+        return write(sheetMap)
     }
 
-    /**
-     * Write Excel File <= Data
-     * @param fileName
-     * @param sheetMap
-     * @return
-     */
-    boolean write(String fileName, Map sheetMap){
+    boolean write(Map sheetMap){
         //Recognize Instance Annotation
         for (String key : sheetMap.keySet()){
             List rowList = sheetMap[key]
@@ -396,10 +462,9 @@ class ReportMan {
         }
 
         //Write Excel File
-        FileOutputStream fos = new FileOutputStream(new File(fileName))
-        workbook.write(fos)
-        fos.flush()
-        fos.close()
+        workbook.write(outputStream)
+        outputStream.flush()
+        outputStream.close()
         return true
     }
 
@@ -675,6 +740,12 @@ class ReportMan {
     String getColumnString(int columnIndex){
         return CellReference.convertNumToColString(columnIndex)
     }
+
+    int getColumnIndex(String columnString){
+        return CellReference.convertColStringToIndex(columnString)
+    }
+
+
 
     String getRangeColumnString(int[] numberIndexArray){
         String rangeColumnString
