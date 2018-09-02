@@ -131,7 +131,8 @@ class ReportMan {
     OutputStream outputStream
     SheetOption sheetOpt
     Map<String, ColumnOption> columnOptMap
-
+    Map<String, ColumnOption> additionalColumnOptionMap
+    List<String> excludeColumnFieldNameList
 
 
     /**************************************************
@@ -155,6 +156,15 @@ class ReportMan {
         return this
     }
 
+    ReportMan setExcludeColumn(String... excludeColumnFieldNames){
+        this.excludeColumnFieldNameList = excludeColumnFieldNames.toList()
+        return this
+    }
+
+    ReportMan addAdditionalColumnOption(Map<String, ColumnOption> additionalColumnOptionMap){
+        this.additionalColumnOptionMap = additionalColumnOptionMap
+        return this
+    }
 
 
     /**************************************************
@@ -628,19 +638,26 @@ class ReportMan {
             if (columnAnt || sheetNameAnt){
                 field.accessible = true
                 String fieldName = field.name
-                columnOptMap[fieldName] = new ColumnOption(
-                    index: columnAnt ? columnAnt.index() : -1,
-                    width: columnAnt ? columnAnt.width() : -1,
-                    headerName: columnAnt ? columnAnt.headerName() : null,
-                    isSheetNameField: sheetNameAnt ? true : false
-                )
-                if (headerAnt)
-                    columnOptMap[fieldName].headerStyle = generateStyleOption(headerAnt)
-                if (dataAnt)
-                    columnOptMap[fieldName].dataStyle = generateStyleOption(dataAnt)
-                if (highlightAnt)
-                    columnOptMap[fieldName].highlightStyle = generateHightlightStyleOption(highlightAnt)
+                //- Checking Exclude Column
+                if (!excludeColumnFieldNameList?.contains(fieldName)){
+                    columnOptMap[fieldName] = new ColumnOption(
+                            index: columnAnt ? columnAnt.index() : -1,
+                            width: columnAnt ? columnAnt.width() : -1,
+                            headerName: columnAnt ? columnAnt.headerName() : null,
+                            isSheetNameField: sheetNameAnt ? true : false
+                    )
+                    if (headerAnt)
+                        columnOptMap[fieldName].headerStyle = generateStyleOption(headerAnt)
+                    if (dataAnt)
+                        columnOptMap[fieldName].dataStyle = generateStyleOption(dataAnt)
+                    if (highlightAnt)
+                        columnOptMap[fieldName].highlightStyle = generateHightlightStyleOption(highlightAnt)
+                }
             }
+        }
+        //Setup Additional Column Options
+        additionalColumnOptionMap?.each{ String fieldName, ColumnOption columnOption ->
+            columnOptMap[fieldName] = columnOption
         }
         //Sorting
         columnOptMap.sort{ a, b ->
