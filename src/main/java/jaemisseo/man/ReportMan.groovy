@@ -133,6 +133,7 @@ class ReportMan {
     Map<String, ColumnOption> columnOptMap
     Map<String, ColumnOption> additionalColumnOptionMap
     List<String> excludeColumnFieldNameList
+    Boolean modeOnlyHeader = false
 
 
     /**************************************************
@@ -163,6 +164,11 @@ class ReportMan {
 
     ReportMan addAdditionalColumnOption(Map<String, ColumnOption> additionalColumnOptionMap){
         this.additionalColumnOptionMap = additionalColumnOptionMap
+        return this
+    }
+
+    ReportMan setModeOnlyHeader(Boolean modeOnlyHeader){
+        this.modeOnlyHeader = modeOnlyHeader
         return this
     }
 
@@ -320,7 +326,7 @@ class ReportMan {
         }
         sheetMap.remove(null)
         //Create Sheet
-        sheetMap.each{ String sheetName, List dataRowList ->
+        sheetMap.every{ String sheetName, List dataRowList ->
             XSSFSheet sheet = workbook.createSheet(sheetName)
             Map cellStyleMap
             boolean hasHeader = sheetOpt.hasHeader
@@ -386,6 +392,8 @@ class ReportMan {
                 setRowHeight(headerRow, sheetOpt.headerHeight)
             }
 
+            if (modeOnlyHeader)
+                return false
 
             //Create Row(Data)
             //Option - DataTwoToneStyle
@@ -468,7 +476,7 @@ class ReportMan {
                     addFormattingRule(sheet, condition, range, styleOpt)
                 }
             }
-
+            return true
         }
 
         //Write Excel File
