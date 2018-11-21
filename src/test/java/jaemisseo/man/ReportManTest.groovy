@@ -29,7 +29,7 @@ class ReportManTest {
         //DB to SheetMap
         List resultList = []
         //SheetMap To Excel
-        new ReportMan().write('meta3mapping.xlsx', resultList, 'groupName')
+        new ReportMan('meta3mapping.xlsx').write(resultList, 'groupName')
     }
 
     @Test
