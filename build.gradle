@@ -63,10 +63,10 @@ dependencies {
     compile ( (rootProject?.findProject('common-util')) ? project(':common-util') : 'com.github.avaj-java:common-util:0.3.7.2' )
 
     //TODO: Groovy 2.1.3 ~ 2.5.3
-    compile ( (rootProject?.findProject('reportman-annotation')) ? project(':reportman-annotation') : 'com.github.avaj-java:reportman-annotation:0.0.1' )
+    compile ( (rootProject?.findProject('reportman-annotation')) ? project(':reportman-annotation') : 'com.github.avaj-java:reportman-annotation:0.0.5' )
 
     //TODO: Groovy 2.5.4 ~ ..
-//    compile ( (rootProject?.findProject('reportman-annotation-alter')) ? project(':reportman-annotation-alter') : 'com.github.avaj-java:reportman-annotation-alter:0.0.1' )
+//    compile ( (rootProject?.findProject('reportman-annotation-alter')) ? project(':reportman-annotation-alter') : 'com.github.avaj-java:reportman-annotation-alter:0.0.5' )
 
 
     //POI
