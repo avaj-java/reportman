@@ -61,12 +61,15 @@ repositories {
     maven { url "http://maven.springframework.org/release" }
 }
 
+String coreBasePath = project.hasProperty("coreBasePath") ? project.getProperty("coreBasePath") : ""
+
 dependencies {
 
-    compile ( (rootProject?.findProject('common-util')) ? project(':common-util') : 'com.github.avaj-java:common-util:0.4.2' )
+//    compile ( (rootProject?.findProject('common-util')) ? project(':common-util') : 'com.github.avaj-java:common-util:0.4.3' )
+    compile ( (rootProject?.findProject("${coreBasePath}:common-util")) ? project(":${coreBasePath}:common-util") : "com.github.avaj-java:common-util:0.4.3" )
 
     //TODO: Groovy 2.1.3 ~ 2.5.3
-    compile ( (rootProject?.findProject('reportman-annotation')) ? project(':reportman-annotation') : 'com.github.avaj-java:reportman-annotation:0.0.5' )
+    compile ( (rootProject?.findProject(":${coreBasePath}:reportman-annotation")) ? project(":${coreBasePath}:reportman-annotation") : "com.github.avaj-java:reportman-annotation:0.0.5" )
 
     //TODO: Groovy 2.5.4 ~ ..
 //    compile ( (rootProject?.findProject('reportman-annotation-alter')) ? project(':reportman-annotation-alter') : 'com.github.avaj-java:reportman-annotation-alter:0.0.5' )
